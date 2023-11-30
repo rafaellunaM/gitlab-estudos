@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: praefect-config
+data:
+  config.toml: |
+    listen_addr = '0.0.0.0:8076'
+
+    # Optional: export metrics via Prometheus
+    prometheus_listen_addr = '0.0.0.0:5513'
+
+    # Optional: when set to true, metrics that query the database will no longer be
+    # available on the /metrics endpoint but will be available on the /db_metrics endpoint
+    prometheus_exclude_database_from_default_metrics = true
+
+    [failover]
+    enabled = true
+
+    [auth]
+    token = 'abc123secret'
+    transitioning = false
+
+    [gitaly]
+    enable = false
+    
+    [logging]
+    level = 'info'
+    format = 'json'
+
+    [[virtual_storage]]
+    name = 'default'
+    [[virtual_storage.node]]
+    storage = 'gitaly-0'
+    address = 'tcp://192.168.100.55:8075'
+    token = 'abc123secret'
+    [[virtual_storage.node]]
+    storage = 'gitaly-1'
+    address = 'tcp://192.168.100.244:8075'
+    token = 'abc123secret'
+
+    [database]
+    host = '192.168.100.140'
+    port = 5432
+    user = 'postgres'
+    password = 'esus'
+    dbname = 'praefect'
+
+  #  [gitlab]
+  #  url = 'https://gitlab.marquesconsult.cloud'
+  #  relative_url_root = ''
+

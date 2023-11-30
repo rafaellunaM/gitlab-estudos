@@ -1,0 +1,220 @@
+link: https://hackmd.io/Eahd8XqEQB6ly44zCmsaGg?view
+Usado
+2 vms ubuntu 22.04 onde foi instalado um gitaly em cada
+1 praefect feito deployment no k8s
+1 postgres
+
+Instalação do GITALY
+
+Repetir o procedimento nos dois nodes gitaly
+
+apt-get update -y
+apt-get upgrade -y
+apt-get install sudo -y
+Instalar git na versão 2.42.0
+wget https://github.com/git/git/archive/v2.42.0.zip -O git-2.42.0.zip
+unzip git-2.42.0.zip
+cd git-2.42.0
+make prefix=/usr/local all
+sudo make prefix=/usr/local install
+make prefix=/usr/local all
+sudo make prefix=/usr/local install
+export PATH=$PATH:/usr/local/bin
+source ~/.bashrc
+git --version
+Clone repositório do gitaly
+Usado a versão 16-2-stable, porque era a corrente em produção.
+
+git clone https://gitlab.com/gitlab-org/gitaly.git -b 16-2-stable
+Instalação do GO para compilar
+
+curl --remote-name --location --progress-bar "https://go.dev/dl/go1.20.8.linux-amd64.tar.gz"
+echo 'cc97c28d9c252fbf28f91950d830201aa403836cbed702a05932e63f7f0c7bc4  go1.20.8.linux-amd64.tar.gz' | shasum -a256 -c - && \
+  sudo tar -C /usr/local -xzf go1.20.8.linux-amd64.tar.gz
+sudo ln -sf /usr/local/go/bin/{go,gofmt} /usr/local/bin/
+rm go1.20.8.linux-amd64.tar.gz
+dentro do repositório gitaly execute o comando
+
+make
+
+A seguir
+
+mv confing.toml.example config.toml
+alterado as seguintes sessões:
+
+#mapeado para esse path, o default seria para /home/git...
+socket_path = "/home/marques/gitlab/tmp/sockets/private/gitaly.socket"
+
+#mapeado para o local do binário gitaly
+bin_dir = "/home/marques/gitaly-1.deployment/_build/bin"
+
+#liberado para escutar nesta porta
+listen_addr = "0.0.0.0:8075"
+
+# # Optional: export metrics via Prometheus
+#a porta default é 9236
+prometheus_listen_addr = "0.0.0.0:5512"
+
+
+ [auth]
+ token = 'abc123secret'
+ transitioning = false
+
+#mapeado para este path e foi criado esse dir,     atentar para o user que pode acessa-lo
+[[storage]]
+name = "gitaly-1"
+path = "/home/marques/repositories"
+
+#criado esse dir e mapeado o path, caso contrário ele não starta
+[gitlab-shell]
+# The directory where gitlab-shell is installed
+dir = "/home/marques/gitlab-shell"
+
+#criado esse dir  e arquivo oculto e mapeado o path, caso contrário ele não starta
+[gitlab]
+secret_file = "/home/marques/gitlab-shell/.gitlab_shell_secret"
+SystemD do gitaly
+[Unit]
+Description=Gitaly Git RPC service
+After=network.target
+
+[Service]
+ExecStart=/home/marques/gitaly-1.deployment/_build/bin/gitaly serve  /home/marques/gitaly-1.deployment/config.toml
+Restart=always
+User=user
+Group=user
+
+[Install]
+WantedBy=multi-user.target
+Inicilizar via systemd
+
+Systemctl daemon-reload
+Systemctl enable gitaly.service
+Systemctl start gitaly.service
+Systemctl status gitaly.service
+Para depurar erros:
+
+Use journalctl -xe | grep gitaly
+Para confirmar portas em uso pelo gitaly:
+
+apt install net-tools -y
+journalctl -xe | grep gitaly
+Deployment do praefect no k8s
+
+Deployment:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: praefect-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: praefect
+  template:
+    metadata:
+      labels:
+        app: praefect
+    spec:
+      containers:
+        - name: praefect
+          image: registry.gitlab.com/gitlab-org/build/cng/gitaly:16-2-stable
+          volumeMounts:
+            - name: praefect-conf
+              mountPath: /etc/gitaly/config.toml
+              subPath: config.toml
+          command: ["/usr/local/bin/praefect"]
+          args: ["-config", "/etc/gitaly/config.toml"]
+          env:
+            - name: TZ
+              value: "America/Recife"
+      volumes:
+        - name: praefect-conf
+          configMap:
+            name: praefect-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: praefect-service
+spec:
+  selector:
+    app: praefect
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8076
+ConfigMap:
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: praefect-config
+data:
+  config.toml: |
+    listen_addr = '0.0.0.0:8076'
+
+    # Optional: export metrics via Prometheus
+    prometheus_listen_addr = '0.0.0.0:5513'
+
+    # Optional: when set to true, metrics that query the database will no longer be
+    # available on the /metrics endpoint but will be available on the /db_metrics endpoint
+    prometheus_exclude_database_from_default_metrics = true
+
+    [failover]
+    enabled = true
+
+    [auth]
+    token = 'secret'
+    transitioning = false
+
+    [gitaly]
+    enable = false
+
+    [logging]
+    level = 'info'
+    format = 'json'
+    
+
+##config feita para se conectar a dois gitaly, atentar para ip e porta deles junto com os respectivos secrets. O nome dos Storages também são importantes
+    [[virtual_storage]]
+    name = 'default'
+    [[virtual_storage.node]]
+    storage = 'gitaly-0'
+    address = 'tcp://ip:porta'
+    token = 'secret'
+    [[virtual_storage.node]]
+    storage = 'gitaly-1'
+    address = 'tcp://ip:porta'
+    token = 'secret'
+
+    [database]
+    host = 'ip'
+    port = porta
+    user = 'user'
+    password = 'senha'
+    dbname = 'name'
+
+  #  [gitlab]
+  #  url = 'https.nome.cloud'
+  #  relative_url_root = ''
+Após criar o arquivo de deployment e de configmap
+
+kubectl apply -f diretório/dos/arquivos/
+kubectl get pods
+kubectl exec -it nome-do-pod /bin/bash
+
+dentro do pod:
+verificar as opções
+/usr/local/bin/praefect -config /etc/gitaly/config.toml --help 
+
+criar as estrutura no postgres
+/usr/local/bin/praefect -config /etc/gitaly/config.toml sql-migrate 
+
+Depois confirmar as conexões
+/usr/local/bin/praefect -config /etc/gitaly/config.toml dial-node
+
+Fora do pod
+kubect logs nome-do-pod

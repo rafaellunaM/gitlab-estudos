@@ -1,0 +1,136 @@
+# Example Gitaly configuration file
+# Documentation lives at https://docs.gitlab.com/ee/administration/gitaly/ and
+# https://docs.gitlab.com/ee//administration/gitaly/reference
+
+socket_path = "/home/user/gitlab/tmp/sockets/private/gitaly.socket"
+
+# The directory where Gitaly's executables are stored
+bin_dir = "/home/user/gitaly-1.deployment/_build/bin"
+
+# # Optional: The directory where Gitaly can create all files required to
+# # properly operate at runtime. If not set, Gitaly will create a directory in
+# # the global temporary directory. This directory must exist.
+# runtime_dir = "/home/git/gitaly/run"
+
+# # Optional: listen on a TCP socket. This is insecure (no authentication)
+ listen_addr = "0.0.0.0:8075"
+# tls_listen_addr = "localhost:8888"
+
+# # Optional: export metrics via Prometheus
+prometheus_listen_addr = "0.0.0.0:5512"
+
+# # Optional: configure where the Gitaly creates the sockets for internal connections. If unset, Gitaly will create a randomly
+# # named temp directory each time it boots.
+# # Non Gitaly clients should never connect to these sockets.
+# internal_socket_dir = "/home/git/gitlab/tmp/sockets/private/internal"
+
+# # Optional: authenticate Gitaly requests using a shared secret
+ [auth]
+ token = 'abc123secret'
+ transitioning = false # Set `transitioning` to true to temporarily allow unauthenticated while rolling out authentication.
+
+# [tls]
+# certificate_path = '/home/git/cert.cert'
+# key_path = '/home/git/key.pem'
+
+# # Git settings
+# [git]
+# bin_path = "/usr/bin/git"
+# catfile_cache_size = 100
+#
+# [[git.config]]
+# key = fetch.fsckObjects
+# value = true
+
+[[storage]]
+name = "gitaly-1"
+path = "/home/user/repositories"
+
+# # You can optionally configure more storages for this Gitaly instance to serve up
+#
+# [[storage]]
+# name = "other_storage"
+# path = "/mnt/other_storage/repositories"
+#
+
+# # You can optionally configure Gitaly to output JSON-formatted log messages to stdout
+# [logging]
+# # The directory where Gitaly stores extra log files
+dir = "/home/git/gitlab/log"
+# format = "json"
+# # Optional: Set log level to only log entries with that severity or above
+# # One of, in order: debug, info, warn, errror, fatal, panic
+# # Defaults to "info"
+# level = "warn"
+#
+# # Additionally exceptions from the Go server can be reported to Sentry
+# sentry_dsn = "https://<key>:<secret>@sentry.io/<project>"
+
+# # You can optionally configure Gitaly to record histogram latencies on GRPC method calls
+# [prometheus]
+# grpc_latency_buckets = [0.001, 0.005, 0.025, 0.1, 0.5, 1.0, 10.0, 30.0, 60.0, 300.0, 1500.0]
+
+[gitlab-shell]
+# The directory where gitlab-shell is installed
+dir = "/home/user/gitlab-shell"
+
+[hooks]
+custom_hooks_dir = "/home/git/custom_hooks"
+
+[gitlab]
+secret_file = "/home/user/gitlab-shell/.gitlab_shell_secret"
+url = "http+unix://%2Fhome%2Fgit%2Fgitlab%2Ftmp%2Fsockets%2Fgitlab-workhorse.socket"
+# Only needed if a UNIX socket is used in `url` and GitLab is configured to
+# use a relative path (e.g. /gitlab).
+# relative_url_root = '/'
+
+[gitlab.http-settings]
+# read_timeout = 300
+# user = someone
+# password = somepass
+# ca_file = /etc/ssl/cert.pem
+# ca_path = /etc/pki/tls/certs
+self_signed_cert = false
+
+# # You can adjust the concurrency of each RPC endpoint
+# [[concurrency]]
+# rpc = "/gitaly.RepositoryService/OptimizeRepository"
+# max_per_repo = 1
+# max_queue_wait = "1m"
+# max_queue_size = 10
+
+# [[rate_limiting]]
+# rpc = "/gitaly.SmartHTTPService/PostUploadPackWithSidechannel"
+# interval = "1m"
+# burst = 5
+
+# Daily maintenance designates time slots to run daily to optimize and maintain
+# enabled storages.
+# [daily_maintenance]
+# start_hour = 23
+# start_minute = 30
+# duration = "45m"
+# storages = ["default"]
+# disabled = false
+
+# Limit the resources Gitaly can use via Linux cgroups v1
+# [cgroups]
+# mountpoint = "/sys/fs/cgroup"
+# hierarchy_root = "gitaly"
+# memory_bytes = 64424509440 # 60gb
+# cpu_shares = 1024
+# cpu_quota_us = 400000
+
+# Limit the resources each repository can use via Linux cgroups v1
+# [cgroups.repositories]
+# count = 500
+# memory_bytes = 12884901888 # 12gb
+# cpu_shares = 512
+# cpu_quota_us = 200000
+
+# # Server-side backups
+# [backup]
+# # The destination object-storage URL.
+# go_cloud_url = "gs://gitaly-backups"
+# # Optional: defaults to pointer
+# # layout = "pointer"

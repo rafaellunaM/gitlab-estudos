@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: praefect-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: praefect
+  template:
+    metadata:
+      labels:
+        app: praefect
+    spec:
+      containers:
+        - name: praefect
+          image: registry.gitlab.com/gitlab-org/build/cng/gitaly:16-2-stable
+          volumeMounts:
+            - name: praefect-conf
+              mountPath: /etc/gitaly/config.toml
+              subPath: config.toml
+          command: ["/usr/local/bin/praefect"]
+          args: ["-config", "/etc/gitaly/config.toml"]
+          env:
+            - name: TZ
+              value: "America/Recife"
+      volumes:
+        - name: praefect-conf
+          configMap:
+            name: praefect-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: praefect-service
+spec:
+  selector:
+    app: praefect
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8076
+
