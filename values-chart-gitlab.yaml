@@ -1,0 +1,181 @@
+global:
+  edition: ce
+  hosts:
+    https: true
+    gitlab:
+      name: gitlab.x.x
+    registry:
+      name: registry.x.x
+    ssh: ssh.x.x
+
+  ###########
+  # INGRESS #
+  ###########
+  ingress:
+    enabled: true
+    configureCertmanager: false
+    class: nginx
+    tls:
+      secretName: wildcard-xxx-xxx
+    annotations:
+      cert-manager.io/issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/proxy-real-ip-cidr: "0.0.0.0/0"       
+
+  #######
+  # KAS #
+  #######
+  # https://docs.gitlab.com/charts/charts/gitlab/kas/#disable-the-agent-server
+  kas:
+    enabled: false
+ 
+  #########
+  # REDIS #
+  #########
+  redis:
+    auth:
+      enabled: false
+    host: x.x.x.x/1 #databse redis 1
+
+  #########
+  # MINIO #
+  #########
+  # https://docs.gitlab.com/charts/charts/minio/#enable-the-sub-chart
+  minio:
+    enabled: false
+
+  appConfig:
+    object_store:
+      enabled: true
+      connection:
+        secret: gitlab-rails-storage
+        key: connection
+    
+
+    # https://docs.gitlab.com/16.6/charts/charts/globals.html#omniauth
+    omniauth:
+      enabled: true
+      allowSingleSignOn:
+        - openid_connect
+      autoLinkUser:
+        - openid_connect
+      # autoSignInWithProvider: openid_connect
+      syncProfileFromProvider: 
+        - openid_connect
+      blockAutoCreateUsers: true
+      providers:
+        - secret: gitlab-omniauth-provider-keycloak-openid
+
+  ################
+  ##  REGISTRY  ##
+  ################
+  ## https://docs.gitlab.com/charts/charts/registry/#enable-the-sub-chart
+  registry:
+    enabled: true
+
+  ##############
+  ##  GITALY  ##
+  ##############
+  # https://docs.gitlab.com/charts/charts/globals.html#external
+  gitaly:
+    enabled: false
+    external:
+      - name: default
+        hostname: praefect.x.x.x
+        port: 2305
+        tlsEnabled: false
+    authToken:
+      secret: external-gitaly-token
+      key: token
+    tls:
+      enabled: false
+
+  ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
+  psql:
+    password:
+      secret: gitlab-postgresql-password
+      key: postgresql-password
+    host: cluster-0.x.x.x.x
+    username: gitlab
+    database: gitlab-prod
+
+gitlab-shell:
+  enabled: true
+
+nginx-ingress:
+  enabled: false
+
+gitlab:
+  toolbox:
+    enabled: true
+
+  gitlab-shell:
+    enabled: true
+    sshDaemon: gitlab-sshd
+    metrics:
+      enabled: true
+
+## https://docs.gitlab.com/charts/charts/registry/#configuration
+registry:
+  enabled: true
+  maintenance:
+    readonly:
+      enabled: false
+    uploadpurging:
+      enabled: true
+      age: 168h
+      interval: 24h
+      dryrun: false
+
+  redis:
+    cache:
+      enabled: true
+      host: x.x.x.x
+      db: 2
+      password:
+        enabled: false
+
+  storage:
+    secret: registry-storage  
+    key: config
+
+  database:
+    enabled: true
+    host: x.x.x.x
+    name: registry-prod
+    user: gitlab
+    password:
+      secret: gitlab-postgresql-password
+      key: postgresql-password
+
+  
+
+  gc:
+    disabled: true
+    maxbackoff: 24h
+    noidlebackoff: false
+    transactiontimeout: 10s
+    reviewafter: 24h
+    manifests:
+      disabled: false
+      interval: 5s
+    blobs:
+      disabled: false
+      interval: 5s
+      storagetimeout: 5s
+
+# dependencies
+postgresql:
+  install: false
+
+certmanager:
+  install: false
+
+prometheus:
+  install: false
+
+redis:
+  install: false
+
+gitlab-runner:
+  install: false
+

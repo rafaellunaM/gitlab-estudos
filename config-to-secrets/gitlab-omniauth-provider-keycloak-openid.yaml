@@ -1,0 +1,18 @@
+name: openid_connect # do not change this parameter
+label: Keycloak # optional label for login button, defaults to "Openid Connect"
+args:
+  name: openid_connect
+  scope:
+    - openid
+    - profile
+    - email
+  response_type: code
+  issuer:  "https://auth.x.x/x/x"
+  client_auth_method: "query"
+  discovery: true
+  uid_field: "preferred_username"
+  pkce: true
+  client_options:
+    identifier: gitlab
+    secret: x
+    redirect_uri: "https://gitlab.x.x/users/auth/openid_connect/callback"

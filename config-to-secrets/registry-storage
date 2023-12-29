@@ -1,0 +1,8 @@
+s3:
+  bucket: nome bucket
+  accesskey: key gerada no minio
+  secretkey: key gerada no minio
+  region: us-east-1
+  regionendpoint: "https://minio.x.x"
+  pathstyle: true
+  v4auth: true

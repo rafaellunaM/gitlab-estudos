@@ -1,0 +1,8 @@
+provider: AWS
+region: us-east-1
+aws_access_key_id: xxx
+aws_secret_access_key: xxx
+aws_signature_version: 4
+host: minio.x.x
+endpoint: "https://minio.x.x"
+path_style: true
