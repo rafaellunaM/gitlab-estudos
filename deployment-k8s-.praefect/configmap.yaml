@@ -31,21 +31,21 @@ data:
     name = 'default'
     [[virtual_storage.node]]
     storage = 'gitaly-0'
-    address = 'tcp://192.168.100.55:8075'
+    address = 'tcp://x.x.x.x:x'
     token = 'abc123secret'
     [[virtual_storage.node]]
     storage = 'gitaly-1'
-    address = 'tcp://192.168.100.244:8075'
+    address = 'tcp://x.x.x.x:x'
     token = 'abc123secret'
 
     [database]
-    host = '192.168.100.140'
+    host = 'x.x.x.x'
     port = 5432
-    user = 'postgres'
-    password = 'esus'
-    dbname = 'praefect'
+    user = 'x'
+    password = 'x'
+    dbname = 'x'
 
   #  [gitlab]
-  #  url = 'https://gitlab.marquesconsult.cloud'
+  #  url = 'https://gitlab.x.x'
   #  relative_url_root = ''
 

@@ -32,13 +32,55 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: praefect-service
+  name: gitlab-praefect
 spec:
   selector:
     app: praefect
   type: LoadBalancer
+  loadBalancerIP: 10.0.4.27
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8076
+      port: 2305
+      targetPort: 2305
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: gitlab-praefect-lb
+#spec:
+#  selector:
+#    app: praefect
+#  type: LoadBalancer
+#  loadBalancerIP: 10.0.4.27
+#  ports:
+#    - protocol: TCP
+#      port: 8076
+#      targetPort: 2305
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitlab-praefect
+  annotations:
+    #cert-manager.io/issuer: "letsencrypt-prod"
+    # nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: praefect.x.x.x
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gitlab-praefect
+                port:
+                  number: 2305
+#  tls:
+#    - secretName: wildcard-x-x
+#      hosts:
+#        - praefect.gitlab.x.x
 
