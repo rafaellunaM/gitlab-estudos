@@ -3,11 +3,10 @@ global:
   hosts:
     https: true
     gitlab:
-      name: gitlab.x.x
+      name: gitlab.url
     registry:
-      name: registry.x.x
-    ssh: ssh.x.x
-
+      name: registry.url
+    ssh: gitlab.url
   ###########
   # INGRESS #
   ###########
@@ -16,10 +15,17 @@ global:
     configureCertmanager: false
     class: nginx
     tls:
-      secretName: wildcard-xxx-xxx
+      secretName: wildcard-url
     annotations:
       cert-manager.io/issuer: "letsencrypt-prod"
       nginx.ingress.kubernetes.io/proxy-real-ip-cidr: "0.0.0.0/0"       
+
+  ################
+  # CERTIFICATES #
+  ################
+  #  certificates:
+  #  customCAs:
+  #    - secret: gitlab-gitaly-tls
 
   #######
   # KAS #
@@ -34,7 +40,7 @@ global:
   redis:
     auth:
       enabled: false
-    host: x.x.x.x/1 #databse redis 1
+    host: 10.203.0.10
 
   #########
   # MINIO #
@@ -50,7 +56,6 @@ global:
         secret: gitlab-rails-storage
         key: connection
     
-
     # https://docs.gitlab.com/16.6/charts/charts/globals.html#omniauth
     omniauth:
       enabled: true
@@ -71,7 +76,7 @@ global:
   ## https://docs.gitlab.com/charts/charts/registry/#enable-the-sub-chart
   registry:
     enabled: true
-
+    
   ##############
   ##  GITALY  ##
   ##############
@@ -80,7 +85,7 @@ global:
     enabled: false
     external:
       - name: default
-        hostname: praefect.x.x.x
+        hostname: praefect.url
         port: 2305
         tlsEnabled: false
     authToken:
@@ -88,15 +93,16 @@ global:
       key: token
     tls:
       enabled: false
-
-  ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
+      # secretName: gitlab-gitaly-tls
+ 
+  # https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
   psql:
     password:
       secret: gitlab-postgresql-password
       key: postgresql-password
-    host: cluster-0.x.x.x.x
+    host: url
     username: gitlab
-    database: gitlab-prod
+    database: gitlab
 
 gitlab-shell:
   enabled: true
@@ -109,10 +115,14 @@ gitlab:
     enabled: true
 
   gitlab-shell:
+  
     enabled: true
     sshDaemon: gitlab-sshd
     metrics:
       enabled: true
+    authToken:
+      secret: gitlab-gitlab-shell-secret
+      key: secret
 
 ## https://docs.gitlab.com/charts/charts/registry/#configuration
 registry:
@@ -129,8 +139,8 @@ registry:
   redis:
     cache:
       enabled: true
-      host: x.x.x.x
-      db: 2
+      host: 10.203.0.10
+      db: 4
       password:
         enabled: false
 
@@ -140,15 +150,13 @@ registry:
 
   database:
     enabled: true
-    host: x.x.x.x
-    name: registry-prod
+    host: url
+    name: registry
     user: gitlab
     password:
       secret: gitlab-postgresql-password
       key: postgresql-password
-
-  
-
+      
   gc:
     disabled: true
     maxbackoff: 24h
