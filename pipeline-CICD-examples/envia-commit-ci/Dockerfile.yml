@@ -1,0 +1,5 @@
+FROM traefik/whoami
+
+ARG WHOAMI_NAME=unset
+
+ENV WHOAMI_NAME=${WHOAMI_NAME}

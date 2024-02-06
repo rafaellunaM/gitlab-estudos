@@ -1,0 +1,41 @@
+stages:
+  - build
+  - update_helm_chart
+
+variables:
+  APP_NAME: whoami-test
+  IMAGE_TAG: "<URL_REGISTRY>/root/envia-commit-ci/$APP_NAME:${CI_COMMIT_SHORT_SHA}"
+
+build:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.14.0-debug
+    entrypoint: [""]
+  script:
+    - |
+      /kaniko/executor \
+        --context "${CI_PROJECT_DIR}" \
+        --dockerfile "${CI_PROJECT_DIR}/Dockerfile.yml" \
+        --destination "${IMAGE_TAG}" \
+        --build-arg WHOAMI_NAME="${CI_COMMIT_SHORT_SHA}"
+
+ 
+  rules:
+    - when: manual
+
+update_helm_chart:
+  stage: update_helm_chart
+  before_script:
+    - apt-get update && apt-get install -y git
+    - git clone https://<USER>:<TOKEN>@<URL>/root/recebe-commit-ci.git
+    - git config --global user.email "root@example.com"
+    - git config --global user.name "root"
+    - cd recebe-commit-ci
+    - ls -lh
+  script:
+    - sed -i "s/whoami-test:.*/whoami-test:${CI_COMMIT_SHORT_SHA}/" whoami/values.yaml
+    - git add  whoami/values.yaml
+    - git commit -am "${CI_COMMIT_AUTHOR}, ${CI_COMMIT_SHORT_SHA}"
+    - git push
+  rules:
+    - when: manual
