@@ -7,7 +7,7 @@ utilizado:
 2 - 3 vms ubuntu 22.04 para as instâncias gitaly
 3 - deployment de um praefect para as 3 instâncias gitaly
 4 - helm chart do gitlab personalizado 
-5 - helm chart do gitlab-runner para CI 
+5 - helm chart do gitlab-runner para CICD
 6 - ingress-nginx para acesso externo do cluster k8s
 
 instruções:
